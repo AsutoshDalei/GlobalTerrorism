@@ -28,7 +28,7 @@ def fetch_and_clean_data(path,nrows = 10000):
     return data
 
 path = "/Users/asutoshdalei/Desktop/Work/GlobalTerrorism/globalterrorismdb.csv"
-data = fetch_and_clean_data(path,nrows=10000)
+data = fetch_and_clean_data(path,nrows= -1)
 
 countryWise = data.groupby('Country')['casualities'].sum()
 countryList = countryWise[countryWise>5].index.tolist()
@@ -86,12 +86,12 @@ st.divider()
 
 col1, col2 = st.columns(2)
 with col1:
-    valCount1 = mapData['AttackType'].value_counts()
+    valCount1 = mapData['AttackType'].value_counts(sort=True).head(10)
     st.subheader("Attack Type")
     st.bar_chart(data=valCount1,horizontal = True, color = '#ad331a')
 
 with col2:
-    valCount2 = mapData['Group'].value_counts()
+    valCount2 = mapData['Group'].value_counts(sort=True).head(10)
     st.subheader("Attacking Group")
     st.bar_chart(data=valCount2,horizontal = True, color = '#ada11a')
 
