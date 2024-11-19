@@ -14,7 +14,10 @@ def dateFnx(row):
 
 @st.cache_data
 def fetch_and_clean_data(path,nrows = 10000):
-    data = pd.read_csv(path,encoding= 'ISO-8859-1',nrows=nrows)
+    if nrows == -1:
+        data = pd.read_csv(path,encoding= 'ISO-8859-1')
+    else:
+        data = pd.read_csv(path,encoding= 'ISO-8859-1',nrows=nrows)
     data.rename(columns={'iyear':'Year','imonth':'Month','iday':'Day','country_txt':'Country','region_txt':'Region','attacktype1_txt':'AttackType','target1':'Target','nkill':'Killed','nwound':'Wounded','summary':'Summary','gname':'Group','targtype1_txt':'Target_type','weaptype1_txt':'Weapon_type','motive':'Motive'},inplace=True)
 
     data=data[['Year','Month','Day','Country','Region','city','latitude','longitude','AttackType','Killed','Wounded','Target','Summary','Group','Target_type','Weapon_type','Motive']]
@@ -25,11 +28,10 @@ def fetch_and_clean_data(path,nrows = 10000):
     return data
 
 path = "/Users/asutoshdalei/Desktop/Work/GlobalTerrorism/globalterrorismdb.csv"
-data = fetch_and_clean_data(path)
+data = fetch_and_clean_data(path,nrows=10000)
 
 countryWise = data.groupby('Country')['casualities'].sum()
 countryList = countryWise[countryWise>5].index.tolist()
-
 
 # Streamlit section
 st.title("Global Terrorism Impact")
@@ -52,12 +54,15 @@ with st.sidebar:
         if 'Global' in mapSelection:
             mapSelection = data.Country.unique().tolist()
 
+minTime,maxTime = data[data.latitude.notna() & data.longitude.notna()]['date'].agg(['min','max'])
+dateRangeOptions = pd.date_range(minTime,maxTime,freq = 'W').strftime('%Y-%m-%d').tolist()
+start_time,end_time = st.select_slider(label='Date Range',options=dateRangeOptions,value=(dateRangeOptions[0],dateRangeOptions[-1]))
 
 ## Impact Map
 st.header('Locations of Attacks',divider=True)
-mapData = data[data.latitude.notna() & data.longitude.notna() & data[mapFlagCol].isin(mapSelection)]
-st.map(mapData[['latitude','longitude']])
 
+mapData = data[data.latitude.notna() & data.longitude.notna() & data[mapFlagCol].isin(mapSelection) & (data['date']>=start_time) & (data['date']<=end_time)]
+st.map(mapData[['latitude','longitude']])
 
 
 ## Frequency Cases
@@ -83,6 +88,11 @@ col1, col2 = st.columns(2)
 with col1:
     valCount1 = mapData['AttackType'].value_counts()
     st.subheader("Attack Type")
-    st.bar_chart(data=valCount1,color=plt.cm.get_cmap('cool',len(valCount1)))
+    st.bar_chart(data=valCount1,horizontal = True, color = '#ad331a')
+
+with col2:
+    valCount2 = mapData['Group'].value_counts()
+    st.subheader("Attacking Group")
+    st.bar_chart(data=valCount2,horizontal = True, color = '#ada11a')
 
 
