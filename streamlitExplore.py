@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 import plotly.express as px
-import plotly.graph_objects as go
+import time
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -44,8 +44,6 @@ with st.sidebar:
     st.header("Global Terrorism Analysis")
     st.subheader('Select Analysis Options')
 
-    
-
     mapFlag = st.toggle(label = "Region/Country Toggle", value = True)
     variable_radio = st.radio(label="Analysis Measure:",options=['Cases','Casualities'])
     
@@ -68,8 +66,24 @@ start_time,end_time = st.select_slider(label='Date Range',options=dateRangeOptio
 st.header('Locations of Attacks',divider=False)
 
 mapData = data[data.latitude.notna() & data.longitude.notna() & data[mapFlagCol].isin(mapSelection) & (data['date']>=start_time) & (data['date']<=end_time)]
+# clicked = st.toggle(label = "Timeline", value = False)
+
+# if clicked:
+#     latDt = mapData.groupby(['Year','Month'])['latitude'].apply(list)
+#     lonDt = mapData.groupby(['Year','Month'])['longitude'].apply(list)
+#     mapPlot = st.map(pd.DataFrame({'LAT':latDt.iloc[0],'LON':lonDt.iloc[0]}),zoom=15)
+#     for ydt in latDt.index.to_list()[1:]:
+#         tempDf = pd.DataFrame({'LAT':latDt[ydt],'LON':lonDt[ydt]})
+#         mapPlot.add_rows(tempDf)
+#         time.sleep(0.5)
+# else:
+#     st.map(mapData[['latitude','longitude']])
+
 st.map(mapData[['latitude','longitude']])
 
+
+
+## Country Wise analysis
 st.header("Country Wise Analysis")
 chartTypeLog_toggle = st.toggle(label = "Log Analysis", value = True)
 
