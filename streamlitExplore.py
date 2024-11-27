@@ -37,51 +37,48 @@ countryList = countryWise[countryWise>5].index.tolist()
 
 # Streamlit section
 st.title("Global Terrorism Impact")
-## Sidebar
-with st.sidebar:
-    # imgPath = 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fstock.adobe.com%2Fsearch%3Fk%3Dglobal%2Bterrorism&psig=AOvVaw1at4COBS15aJmBDExfObUY&ust=1732377795838000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCNj_1ayo8IkDFQAAAAAdAAAAABAE'
-    # st.image(imgPath)
-    st.header("Global Terrorism Analysis")
-    st.subheader('Select Analysis Options')
-
-    mapFlag = st.toggle(label = "Region/Country Toggle", value = True)
-    variable_radio = st.radio(label="Analysis Measure:",options=['Cases','Casualities'])
-    
-    if mapFlag == True:
-        mapFlagCol = 'Region'
-        mapSelection = st.multiselect(label='Select Region',options = data.Region.unique().tolist()+['Global'],default='Global')
-        if ('Global' in mapSelection) or (mapSelection==[]):
-            mapSelection = data.Region.unique().tolist()
-    else:
-        mapFlagCol = 'Country'
-        mapSelection = st.multiselect(label='Select Country',options = data.Country.unique().tolist()+['Global'],default='Global')
-        if ('Global' in mapSelection) or (mapSelection==[]):
-            mapSelection = data.Country.unique().tolist()
 
 minTime,maxTime = data[data.latitude.notna() & data.longitude.notna()]['date'].agg(['min','max'])
 dateRangeOptions = pd.date_range(minTime,maxTime,freq = 'W').strftime('%Y-%m-%d').tolist()
 start_time,end_time = st.select_slider(label='Date Range',options=dateRangeOptions,value=(dateRangeOptions[0],dateRangeOptions[-1]))
 
+
+## Sidebar
+with st.sidebar:
+    # imgPath = 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fstock.adobe.com%2Fsearch%3Fk%3Dglobal%2Bterrorism&psig=AOvVaw1at4COBS15aJmBDExfObUY&ust=1732377795838000&source=images&cd=vfe&opi=89978449&ved=0CBQQjRxqFwoTCNj_1ayo8IkDFQAAAAAdAAAAABAE'
+    # st.image(imgPath)
+    st.header("Global Terrorism Analysis")
+    # st.subheader('Select Analysis Options')
+
+    # mapFlag = st.toggle(label = "Region/Country Toggle", value = True)
+    mapFlagCol = st.radio(label="Geography:",options=['Region','Country'])
+    variable_radio = st.radio(label="Analysis Measure:",options=['Attacks','Casualities'])
+    
+    if mapFlagCol == 'Region':
+        # mapFlagCol = 'Region'
+        mapSelection = st.multiselect(label='Select Region',options = data.Region.unique().tolist()+['Global'],default='Global')
+        if ('Global' in mapSelection) or (mapSelection==[]):
+            mapSelection = data.Region.unique().tolist()
+    else:
+        # mapFlagCol = 'Country'
+        mapSelection = st.multiselect(label='Select Country',options = data.Country.unique().tolist()+['Global'],default='Global')
+        if ('Global' in mapSelection) or (mapSelection==[]):
+            mapSelection = data.Country.unique().tolist()
+    
+    mapData = data[data.latitude.notna() & data.longitude.notna() & data[mapFlagCol].isin(mapSelection) & (data['date']>=start_time) & (data['date']<=end_time)]
+    
+    col1, col2 = st.columns(2)
+    pctChangeAtt = mapData.groupby('Year')['casualities'].count().pct_change().iloc[-1]*100
+    pctChangeCas = mapData.groupby('Year')['casualities'].sum().pct_change().iloc[-1]*100
+    col1.metric("Total Attacks",mapData.shape[0],f"{format(pctChangeAtt,'.3f')}%")
+    col1.caption("Over past one year")
+    col2.metric("Total Casualities",int(mapData['casualities'].sum()),f"{format(pctChangeCas,'.3f')}%")
+    col2.caption("Over past one year")
+
 ## Impact Map
 st.header('Locations of Attacks',divider=False)
 
-mapData = data[data.latitude.notna() & data.longitude.notna() & data[mapFlagCol].isin(mapSelection) & (data['date']>=start_time) & (data['date']<=end_time)]
-# clicked = st.toggle(label = "Timeline", value = False)
-
-# if clicked:
-#     latDt = mapData.groupby(['Year','Month'])['latitude'].apply(list)
-#     lonDt = mapData.groupby(['Year','Month'])['longitude'].apply(list)
-#     mapPlot = st.map(pd.DataFrame({'LAT':latDt.iloc[0],'LON':lonDt.iloc[0]}),zoom=15)
-#     for ydt in latDt.index.to_list()[1:]:
-#         tempDf = pd.DataFrame({'LAT':latDt[ydt],'LON':lonDt[ydt]})
-#         mapPlot.add_rows(tempDf)
-#         time.sleep(0.5)
-# else:
-#     st.map(mapData[['latitude','longitude']])
-
 st.map(mapData[['latitude','longitude']])
-
-
 
 ## Country Wise analysis
 st.header("Country Wise Analysis")
@@ -125,9 +122,12 @@ else:
     freqCount = mapData[['casualities','date']].set_index('date').resample(freqMap[freq])['casualities'].sum()
 
 if chartType_radio == 'Line':
-    st.line_chart(data=freqCount,color='#bf3228')
+    fig = px.line(freqCount)
+    # st.line_chart(data=freqCount,color='#bf3228')
 else:
-    st.area_chart(data=freqCount,color='#bf3228')
+    # st.area_chart(data=freqCount,color='#bf3228')
+    fig = px.area(freqCount,)
+st.plotly_chart(fig)
 
 ## Weapon Details
 st.divider()
@@ -143,10 +143,17 @@ with col1:
     valCount1 = mapData['AttackType'].value_counts(sort=True).head(10)
     st.subheader("Attack Type")
     st.bar_chart(data=valCount1,horizontal = True, color = '#ad331a')
+    # fig = px.bar(valCount1)
+    # fig.update_traces(textfont_size=12, textangle=45, textposition="outside", cliponaxis=False)
+    # st.plotly_chart(fig)
 
 with col2:
     valCount2 = mapData['Group'].value_counts(sort=True).head(10)
     st.subheader("Attacking Group")
     st.bar_chart(data=valCount2,horizontal = True, color = '#ada11a')
+    # fig = px.bar(valCount2)
+    # fig.update_traces(textfont_size=12, textangle=45, textposition="outside", cliponaxis=False)
+    # st.plotly_chart(fig)
+
 
 
