@@ -147,6 +147,21 @@ else:
 fig.update_xaxes(title_text="Target Type")
 st.plotly_chart(fig)
 
-st.divider()
-st.header("Terrorism in Images")
-imgs = os.listdir()
+# Image Showcase
+# st.divider()
+# st.header("Terrorism in Images")
+# imgsPath = '/Users/asutoshdalei/Desktop/Work/GlobalTerrorism/terrorismImages/'
+# imgs = os.listdir(imgsPath)[1:]
+# idx = 0
+
+# cont = st.empty()
+# while idx < len(imgs):
+#     print(imgs[idx])
+#     cont.image(imgsPath+imgs[idx])
+#     time.sleep(5)
+#     idx+=1
+#     if idx == len(imgs):
+#         idx = 0
+
+
+
