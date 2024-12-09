@@ -27,6 +27,8 @@ def fetch_and_clean_data(path,nrows = 10000):
 
     data = data[(data.Month!=0) & (data.Day!=0)]
     data['date'] = data.apply(dateFnx,axis=1)
+
+    data['Weapon_type'].replace("Vehicle (not to include vehicle-borne explosives, i.e., car or truck bombs)","Vehicle",inplace=True)
     return data
 
 data_path = "/Users/asutoshdalei/Desktop/Work/GlobalTerrorism/globalterrorismdb.csv"
@@ -117,8 +119,10 @@ st.plotly_chart(fig)
 ## Weapon Details
 st.divider()
 st.subheader('Weapons and Casualties')
-weaponsCasualities = mapData.groupby('Weapon_type')['casualities'].sum().sort_values()
-st.bar_chart(data = weaponsCasualities,color = '#bf3228')
+weaponsCasualities = mapData.groupby('Weapon_type')['casualities'].sum().sort_values(ascending=False)
+fig = px.bar(weaponsCasualities)
+# st.bar_chart(data = weaponsCasualities,color = '#bf3228')
+st.plotly_chart(fig)
 
 ## Attack Details
 st.divider()
